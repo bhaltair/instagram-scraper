@@ -12,6 +12,7 @@
     "ejs": "^2.7.1",
     "express": "^4.17.1",
     "file-loader": "^5.1.0",
+    "instagram-scraping": "^1.0.13",
     "puppeteer": "^3.1.0",
     "react": "^16.10.2",
     "react-dom": "^16.10.2",

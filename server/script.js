@@ -1,142 +1,192 @@
-const puppeteer = require('puppeteer');
+const puppeteer = require("puppeteer");
+const fs = require("fs");
+const path = require("path");
+const { addCookies } = require("./utils/index");
+const jsonData = require("./id.json");
 
-const script = async (username) => {
-    const browser = await puppeteer.launch({ 
-        args: [
-            '--incognito',
-        ],
-        headless: false 
-    });
-    const page = await browser.newPage();
-    await page.goto('https://www.instagram.com/accounts/login', { waitUntil: "networkidle2" });
-    await page.type('input[name=username]', 'jessiejames12345678', { delay: 20 });
-    await page.type('input[name=password]', 'adminpassword1', { delay: 20 });
-    await page.click('button[type=submit]', { delay: 20 });
-    await page.waitFor(5000)
+const fsPromises = fs.promises;
 
-    const notifyBtns = await page.$x("//button[contains(text(), 'Not Now')]");
-    if (notifyBtns.length > 0) {
-        await notifyBtns[0].click();
-    } else {
-        console.log("No notification buttons to click.");
-    }
-    await page.goto(`https://www.instagram.com/${username}`, { waitUntil: "networkidle2" });
-    // await page.click('a[href="/rmbhh/"]');
-    await page.waitFor(2000);
-    const followersBtn = await page.$('div[id=react-root] > section > main > div > header > section > ul > li:nth-child(2) > a');
-    await followersBtn.evaluate(btn => btn.click());
+async function scraper(username, page) {
+  // 跳转用户页面
+  await page.goto(`https://www.instagram.com/${username}`, {
+    waitUntil: "networkidle2",
+  });
 
-    await page.waitFor(3000);
-    const followersDialog = 'div[role="dialog"] > div:nth-child(2)';
-    await page.waitForSelector('div[role="dialog"] > div:nth-child(2) > ul');
-    await scrollDown(followersDialog, page);
+  // await page.click('a[href="/rmbhh/"]');
+  await page.waitFor(2000);
 
-    console.log("getting followers");
-    const list1 = await page.$$('div[role="dialog"] > div:nth-child(2) > ul > div > li > div > div > div:nth-child(2) > div > a');
-    let avatarPaths = [
-        'div[role="dialog"] > div:nth-child(2) > ul > div > li > div > div > div > a > img',
-        'div[role="dialog"] > div:nth-child(2) > ul > div > li > div > div > div > span > img'
-    ];
-    const pics1 = await avatarPaths.reduce(async (accProm, path) => {
-        const acc = await accProm;
-        const arr = await page.$$eval(path, res => {
-            return res.map(pic => {
-                const alt = pic.getAttribute('alt');
-                const strings = alt.split(/(['])/g);
-                return {
-                    username: strings[0],
-                    avatar: pic.getAttribute('src')
-                }
-            })
-        });
-        return acc.concat([...arr]);
-    }, Promise.resolve([]));
-    const followers = await Promise.all(list1.map(async item => {
-        const username = await (await item.getProperty('innerText')).jsonValue();
-        const pic = pics1.find(p => p.username === username) || { avatar: "" };
-        return {
-            avatar: await pic.avatar,
-            username
+  // 没有website 会报错
+  let user_name = "";
+  let webiste = "";
+  let following_count = "";
+  let profile_photo = "";
+  let name = "";
+  let bio = "";
+  const category = "";
+  let posts_count = "";
+  let followers_count = "";
+  let story_highlights = [];
+  let posts = [];
+  try {
+    user_name = await page.$eval(
+      "#react-root > section > main > div > header >  section > div.nZSzR > h2",
+      (el) => el.innerHTML
+    );
+    profile_photo = await page.$eval(
+      "#react-root > section > main > div > header > div > div > span > img",
+      (el) => el.src
+    );
+    name = await page.$eval(
+      "#react-root > section > main > div > header > section > div.-vDIg > h1",
+      (el) => el.innerHTML
+    );
+    try {
+      webiste = await page.$eval(
+        "#react-root > section > main > div > header > section > div.-vDIg > a",
+        (el) => el.href
+      );
+    } catch (error) {}
+
+    try {
+      following_count = await page.$eval(
+        "#react-root > section > main > div > header > section > ul > li:nth-child(3) > a > span",
+        (el) => el.innerHTML
+      );
+    } catch (error) {}
+
+    bio = await page.$eval(
+      "#react-root > section > main > div > header > section > div.-vDIg > span",
+      (el) => el.innerHTML
+    );
+
+    try {
+      posts_count = await page.$eval(
+        "#react-root > section > main > div > header > section > ul > li:nth-child(1) > span > span",
+        (el) => el.innerHTML
+      );
+    } catch (error) {}
+
+    try {
+      followers_count = await page.$eval(
+        "#react-root > section > main > div > header > section > ul > li:nth-child(2) > a > span",
+        (el) => el.innerHTML
+      );
+    } catch (error) {}
+
+    story_highlights = await page.evaluate(() => {
+      const selectror =
+        "#react-root > section > main > div > div._4bSq7 > div > div > div > ul > li.Ckrof";
+      const list = document.querySelectorAll(selectror);
+      const result = [];
+      if (list) {
+        for (var j of list) {
+          const div = j.querySelector(".eXle2");
+          const img = j.querySelector("img");
+          result.push({
+            text: div?.innerHTML || "",
+            src: img?.src || "",
+          });
         }
-    }));
+      }
+      return Promise.resolve(result);
+    });
 
-    const closeBtn = await page.$('div[role="dialog"] > div > div > div:nth-child(3) > button');
-    await closeBtn.evaluate(btn => btn.click());
+    posts = await page.evaluate((x) => {
+      let selector =
+        "#react-root > section > main > div > div._2z6nI > article > div:nth-child(1) > div > div";
+      const list = document.querySelectorAll(selector);
+      const result = [];
+      if (list) {
+        for (var i of list) {
+          const arr = i.querySelectorAll(".v1Nh3 ");
+          for (var j of arr) {
+            const img = j.querySelector(" a > div.eLAPa > div.KL4Bh > img");
+            result.push({
+              src: img.src,
+            });
+          }
+        }
+      }
+      return Promise.resolve(result);
+    }, 7);
+  } catch (error) {
+    console.error(error);
+  }
 
-    const followingBtn = await page.$('div[id=react-root] > section > main > div > header > section > ul > li:nth-child(3) > a');
-    await followingBtn.evaluate(btn => btn.click());
-    
-    await page.waitFor(3000);
-    const followingDialog = 'div[role="dialog"] > div:nth-child(3)';
-    await page.waitForSelector('div[role="dialog"] > div:nth-child(3) > ul');
-    await scrollDown(followingDialog, page);
+  const result = {
+    user_name,
+    profile_photo,
+    name,
+    webiste,
+    bio,
+    category,
+    posts_count,
+    followers_count,
+    following_count,
+    story_highlights,
+    posts,
+  };
 
-    console.log("getting following");
-    const list2 = await page.$$('div[role="dialog"] > div:nth-child(3) > ul > div > li > div > div > div:nth-child(2) > div > a');
-    await page.waitForSelector('div[role="dialog"] > div:nth-child(3) > ul > div > li > div > div > div > a > img');
-    avatarPaths = [
-        'div[role="dialog"] > div:nth-child(3) > ul > div > li > div > div > div > a > img',
-        'div[role="dialog"] > div:nth-child(3) > ul > div > li > div > div > div > span > img'
-    ]
-    const pics2 = await avatarPaths.reduce(async (accProm, path) => {
-        const acc = await accProm;
-        const arr = await page.$$eval(path, res => {
-            return res.map(pic => {
-                const alt = pic.getAttribute('alt');
-                const strings = alt.split(/[']/g);
-                return {
-                    username: strings[0],
-                    avatar: pic.getAttribute('src')
-                }
-            })
-        });
-        return acc.concat([...arr]);
-    }, Promise.resolve([]));
-    const following = await Promise.all(list2.map(async item => {
-        const username = await (await item.getProperty('innerText')).jsonValue()
-        const pic = pics2.find(p => p.username === username) || { avatar: "" };
-        return {
-            avatar: await pic.avatar,
-            username
-        };
-    }));
+  const data = JSON.stringify(result, null, 2);
+  const filePath = path.join(__dirname, "../data", `${username}.json`);
 
-    const followerCnt = followers.length;
-    const followingCnt = following.length;
-    console.log(`followers: ${followerCnt}`);
-    console.log(`following: ${followingCnt}`);
-
-    const notFollowingYou = following.filter(item => !followers.find(f => f.username === item.username));
-    const notFollowingThem = followers.filter(item => !following.find(f => f.username === item.username));
-    await browser.close();
-    return { 
-        followerCnt, 
-        followingCnt, 
-        notFollowingYou, 
-        notFollowingThem, 
-        followers, 
-        following
-    };
-};
-
-async function scrollDown(selector, page) {
-    await page.evaluate(async selector => {
-        const section = document.querySelector(selector);
-        await new Promise((resolve, reject) => {
-            let totalHeight = 0;
-            let distance = 100;
-            const timer = setInterval(() => {
-                var scrollHeight = section.scrollHeight;
-                section.scrollTop = 100000000;
-                totalHeight += distance;
-
-                if (totalHeight >= scrollHeight){
-                    clearInterval(timer);
-                    resolve();
-                }
-            }, 100);
-        });
-    }, selector);
+  try {
+    await fsPromises.writeFile(filePath, data);
+    console.log(`write ${username}.json done`);
+  } catch (error) {
+    console.error("write file error");
+  }
 }
 
+const script = async () => {
+  const args = [
+    "--incognito",
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-infobars",
+    "--window-position=0,0",
+    "--ignore-certifcate-errors",
+    "--ignore-certifcate-errors-spki-list",
+    '--user-agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3312.0 Safari/537.36"',
+  ];
+
+  const browser = await puppeteer.launch({
+    // args: ["--incognito"],
+    // args: ["--proxy-server=socks5://127.0.0.1:10808"],
+    args,
+    headless: false,
+    ignoreDefaultArgs: ["--enable-automation"],
+    devtools: true,
+  });
+  const page = await browser.newPage();
+
+  const cookieString = `sessionid=1058586105%3AS8cDbXdKobtDiG%3A5;ig_lang=en`;
+
+  await addCookies(cookieString, page, ".instagram.com");
+
+  // 登录
+  // await page.goto("https://www.instagram.com/accounts/login", {
+  //   waitUntil: "networkidle2",
+  // });
+  // await page.waitFor(2000);
+  // await page.type("input[name=username]", "bhaltair2", {
+  //   delay: 20,
+  // });
+  // await page.type("input[name=password]", "wangqi1234", { delay: 20 });
+  // await page.click("button[type=submit]", { delay: 20 });
+  // await page.waitFor(5000);
+
+  // todo 循环处理
+  for (let i of jsonData.users) {
+    await scraper(i, page);
+  }
+
+  console.log("all is done");
+
+  // 最后关闭浏览器
+  await browser.close();
+};
+
 module.exports = { script };
+
+script();
