@@ -1,3 +1,15 @@
+// 登录
+// await page.goto("https://www.instagram.com/accounts/login", {
+//   waitUntil: "networkidle2",
+// });
+// await page.waitFor(2000);
+// await page.type("input[name=username]", "bhaltair2", {
+//   delay: 20,
+// });
+// await page.type("input[name=password]", "wangqi1234", { delay: 20 });
+// await page.click("button[type=submit]", { delay: 20 });
+// await page.waitFor(5000);
+
 // const notifyBtns = await page.$x("//button[contains(text(), 'Not Now')]");
 // if (notifyBtns.length > 0) {
 //   await notifyBtns[0].click();

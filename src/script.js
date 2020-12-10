@@ -1,8 +1,9 @@
+require('dotenv').config()
 const puppeteer = require("puppeteer");
 const fs = require("fs");
 const path = require("path");
 const { addCookies } = require("./utils/index");
-const jsonData = require("./id.json");
+const jsonData = require("./id.js");
 
 const fsPromises = fs.promises;
 
@@ -147,12 +148,11 @@ const script = async () => {
     "--window-position=0,0",
     "--ignore-certifcate-errors",
     "--ignore-certifcate-errors-spki-list",
+    // "--proxy-server=socks5://127.0.0.1:10808",
     '--user-agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3312.0 Safari/537.36"',
   ];
 
   const browser = await puppeteer.launch({
-    // args: ["--incognito"],
-    // args: ["--proxy-server=socks5://127.0.0.1:10808"],
     args,
     headless: false,
     ignoreDefaultArgs: ["--enable-automation"],
@@ -160,21 +160,10 @@ const script = async () => {
   });
   const page = await browser.newPage();
 
-  const cookieString = `sessionid=1058586105%3AS8cDbXdKobtDiG%3A5;ig_lang=en`;
+  const sessionid = process.env.SESSION_ID
+  const cookieString = `sessionid=${sessionid};ig_lang=en`;
 
   await addCookies(cookieString, page, ".instagram.com");
-
-  // 登录
-  // await page.goto("https://www.instagram.com/accounts/login", {
-  //   waitUntil: "networkidle2",
-  // });
-  // await page.waitFor(2000);
-  // await page.type("input[name=username]", "bhaltair2", {
-  //   delay: 20,
-  // });
-  // await page.type("input[name=password]", "wangqi1234", { delay: 20 });
-  // await page.click("button[type=submit]", { delay: 20 });
-  // await page.waitFor(5000);
 
   // todo 循环处理
   for (let i of jsonData.users) {
