@@ -4,8 +4,8 @@ const fs = require('fs');
 const path = require('path');
 // const devices = require('puppeteer/DeviceDescriptors');
 
-const { addCookies } = require('./utils/index');
-const jsonData = require('./config/id.js');
+const { addCookies } = require('../utils/index');
+const jsonData = require('../config/id.js');
 
 const fsPromises = fs.promises;
 // const iPhone = devices['iPhone 6'];
@@ -206,7 +206,7 @@ const script = async () => {
 
   page.on('console', (msg) => console.log('PAGE LOG:', msg.text()));
 
-  // todo 循环处理
+  // 循环处理
   for (let i of jsonData.users) {
     await scraper(i, page);
   }

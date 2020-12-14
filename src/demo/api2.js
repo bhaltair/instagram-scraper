@@ -1,8 +1,9 @@
+require('dotenv').config();
 const cheerio = require('cheerio');
 const rp = require('request-promise');
-require('dotenv').config();
 const config = require('../config');
 const { upload } = require('../utils/alioss');
+const { writeFile } = require('../utils/fs');
 
 const userAgent =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36 Edg/87.0.664.57';
@@ -130,8 +131,12 @@ async function main(username) {
     timeLineList,
   );
 
-  console.log(calculatedPosts);
+  await writeFile(user_name, {
+    ...user,
+    posts: calculatedPosts,
+  });
 
+  // 处理图片转存
   async function getCalculatedPostsSerial(posts = []) {
     const list = [];
     for (const post of posts) {
@@ -203,6 +208,10 @@ async function main(username) {
     return list;
   }
 
+  /**
+   * 抓取posts
+   * @param {*} param0
+   */
   function fetchPosts({ hasNextPage, endCursor, userId }) {
     return new Promise((resolve, reject) => {
       fetchMore({
@@ -260,87 +269,12 @@ async function main(username) {
       }
     });
   }
-
-  // 异步循环改为递归
-  // function downloadOneAllAsync(posts, onsuccess, onfailure) {
-  //   var n = posts.length;
-  //   function tryNextUrl(i) {
-  //     if (i >= n) {
-  //       onfailure('all failed');
-  //       return;
-  //     }
-  //     function downloadAsync(post) {
-
-  //     }
-  //     downloadAsync(posts[i], onsuccess, function () {
-  //       tryNextUrl(i + 1);
-  //     });
-  //   }
-  //   tryNextUrl[0];
-  // }
-
-  // 处理所有post
-  // function getCalculatedPostsParallel(posts = []) {
-  //   const files = posts.map(async (post) => {
-  //     let {
-  //       __typename,
-  //       is_video,
-  //       shortcode,
-  //       location,
-  //       id,
-  //       edge_liked_by, // 点赞数
-  //       edge_media_to_caption,
-  //       edge_media_to_comment,
-  //       display_url,
-  //       video_url,
-  //       video_view_count,
-  //       taken_at_timestamp,
-  //       edge_sidecar_to_children,
-  //     } = post?.node || {};
-
-  //     // 处理轮播类型
-  //     let slider = [];
-  //     if (__typename === 'GraphSidecar') {
-  //       slider = edge_sidecar_to_children.edges.map(async (item) => {
-  //         var { is_video, video_url, display_url, id } = item.node;
-  //         if (is_video) {
-  //           video_url = await upload(video_url);
-  //         } else {
-  //           display_url = await upload(display_url);
-  //         }
-  //         return {
-  //           display_url,
-  //           video_url,
-  //           id,
-  //           is_video,
-  //         };
-  //       });
-  //     } else if (__typename === 'GraphImage') {
-  //       display_url = await upload(display_url);
-  //     } else if (__typename === 'GraphVideo') {
-  //       video_url = await upload(video_url);
-  //     }
-
-  //     return {
-  //       liked_count: edge_liked_by?.count, // 点赞
-  //       comment_count: edge_media_to_comment?.count,
-  //       description: edge_media_to_caption?.edges?.[0]?.node?.text, // 描述信息
-  //       id,
-  //       location,
-  //       shortcode,
-  //       display_url,
-  //       is_video,
-  //       type: __typename,
-  //       video_url,
-  //       video_view_count,
-  //       taken_at_timestamp, // 时间戳
-  //       slider, // 轮播图
-  //     };
-  //   });
-  //   return Promise.all(files);
-  // }
 }
 
-main('phonehubb').catch((err) => {
-  console.log(err);
-});
+main('phonehubb')
+  .then(() => {
+    console.log('success');
+  })
+  .catch((err) => {
+    console.log(err);
+  });
