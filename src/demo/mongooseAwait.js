@@ -24,7 +24,7 @@ async function main() {
   const instance = new BlogPostModel();
   instance.title = 'hello';
   instance.save(function (err) {
-    //
+    console.error(err);
   });
 
   await BlogPostModel.find({}, function (err, docs) {

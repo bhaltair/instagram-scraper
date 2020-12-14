@@ -2,6 +2,7 @@ const cheerio = require('cheerio');
 const rp = require('request-promise');
 require('dotenv').config();
 const config = require('../config');
+const { upload } = require('../utils/alioss');
 
 const userAgent =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36 Edg/87.0.664.57';
@@ -25,7 +26,7 @@ async function main(username) {
   );
   const $ = cheerio.load(res.body);
   let datas = null,
-    jsFiles = '';
+    jsFileUrl = '';
 
   //这里需要先获取shareData中的一些信息备用
   $('script').each(function (index) {
@@ -43,11 +44,11 @@ async function main(username) {
     // 找query_hash
     let src = $('script').eq(index).prop('src');
     if (src && src.indexOf('Consumer') >= 0) {
-      jsFiles = 'https://www.instagram.com' + src;
+      jsFileUrl = 'https://www.instagram.com' + src;
     }
   });
 
-  const jsContent = await rp.get(jsFiles, requestOptions);
+  const jsContent = await rp.get(jsFileUrl, requestOptions);
   let queryHashList = jsContent.body.match(
     /queryId:"(.+?)".+edge_owner_to_timeline_media/g,
   );
@@ -62,8 +63,8 @@ async function main(username) {
   // 缓存数据
   const timelineData = userData?.edge_owner_to_timeline_media || {};
   let queryHash = result[0],
-    // 所有posts的count
-    count = timelineData.count,
+    // 所有post的count
+    post_count = timelineData.count,
     // page_info
     PageInfo = timelineData?.page_info,
     // 如果是有下一页，可进行第一次分页数据请求，第一次分页请求的响应数据回来之后，id，first 的值不用变，after 的值变为响应数据中 page_info 中 end_cursor 的值，再构造 variables，连同 query_hash 发起再下一页的请求
@@ -75,70 +76,271 @@ async function main(username) {
 
   const MAX = config.max;
 
-  fetchPosts({
+  const {
+    biography,
+    business_category_name,
+    category_enum,
+    category_name,
+    external_url, // 网站
+    // edge_owner_to_timeline_media, // 帖子
+    edge_followed_by, // 被关注
+    edge_follow, // 正在关注
+    full_name,
+    highlight_reel_count, // story count?
+    id, // user id
+    is_business_account,
+    is_joined_recently,
+    // profile_pic_url,
+    profile_pic_url_hd,
+    username: user_name,
+  } = userData;
+
+  const follow_count = edge_follow?.count;
+  const followed_by_count = edge_followed_by?.count;
+
+  const profile_pic_url = await upload(profile_pic_url_hd);
+
+  const user = {
+    biography,
+    business_category_name,
+    category_enum,
+    category_name,
+    external_url, // 网站
+    full_name,
+    highlight_reel_count, // story count?
+    user_id: id, // user id
+    is_business_account,
+    is_joined_recently,
+    profile_pic_url,
+    follow_count,
+    followed_by_count,
+    post_count,
+    user_name,
+  };
+
+  // 拉去所有post，不超过max
+  console.log('fetching Posts...');
+  await fetchPosts({
     hasNextPage,
     endCursor,
     userId,
-    callback: () => {
-      console.log(timeLineList.map((item) => item?.node?.shortcode));
-    },
   });
 
-  function fetchPosts({ hasNextPage, endCursor, userId, callback }) {
-    fetchMore({
-      hasNextPage,
-      endCursor,
-      userId,
-    });
+  const calculatedPosts = await getCalculatedPostsSerial(
+    timeLineList,
+  );
 
-    //开始请求分页接口
-    async function fetchPage({ endCursor, userId, pageSize = 12 }) {
-      const BASE_URL = 'https://www.instagram.com/graphql/query/?';
-      const options = {
-        resolveWithFullResponse: false,
-        proxy: 'http://localhost:1235',
-        headers: {
-          'x-requested-with': 'XMLHttpRequest',
-          'user-agent': userAgent,
-          Cookie: `sessionid=${sessionid};ig_lang=en;`,
-        },
-        json: true,
+  console.log(calculatedPosts);
+
+  async function getCalculatedPostsSerial(posts = []) {
+    const list = [];
+    for (const post of posts) {
+      let {
+        __typename,
+        is_video,
+        shortcode,
+        location,
+        id,
+        edge_liked_by, // 点赞数
+        edge_media_to_caption,
+        edge_media_to_comment,
+        display_url,
+        video_url,
+        video_view_count,
+        edge_sidecar_to_children,
+        taken_at_timestamp,
+      } = post?.node || {};
+
+      const slider = [];
+      if (__typename === 'GraphSidecar') {
+        for (let edge of edge_sidecar_to_children.edges || []) {
+          let {
+            is_video,
+            video_url,
+            __typename,
+            shortcode,
+            display_url,
+            id,
+          } = edge.node || {};
+          if (is_video) {
+            video_url = await upload(video_url);
+          } else {
+            display_url = await upload(display_url);
+          }
+          slider.push({
+            display_url,
+            video_url,
+            id,
+            is_video,
+            __typename,
+            shortcode,
+          });
+        }
+      } else if (__typename === 'GraphVideo') {
+        video_url = await upload(video_url);
+      }
+      // 不管什么类型都有一个display_url
+      display_url = await upload(display_url);
+
+      const result = {
+        liked_count: edge_liked_by?.count,
+        comment_count: edge_media_to_comment?.count,
+        description: edge_media_to_caption?.edges?.[0]?.node?.text,
+        id,
+        location,
+        shortcode,
+        display_url,
+        is_video,
+        __typename,
+        video_url,
+        video_view_count,
+        taken_at_timestamp, // 时间戳
+        slider, // 轮播图
       };
-      const variables = {
-        id: userId,
-        first: pageSize,
-        after: endCursor,
-      };
-      const str = escape(JSON.stringify(variables));
-      const url = `${BASE_URL}query_hash=${queryHash}&variables=${str}`;
-      const res = await rp.get(url, options);
-      const data =
-        res?.data?.user?.edge_owner_to_timeline_media || {};
-      return {
-        hasNextPage: data?.page_info?.has_next_page,
-        endCursor: data?.page_info?.end_cursor,
-        list: data?.edges,
-      };
+      list.push(result);
     }
+    console.log('done getCalculatedPostsSerial');
+    return list;
+  }
 
-    // xxx
-    async function fetchMore({ hasNextPage, endCursor, userId }) {
-      const len = timeLineList.length;
-      if (len >= MAX || !hasNextPage) return callback?.();
-      const data = await fetchPage({
+  function fetchPosts({ hasNextPage, endCursor, userId }) {
+    return new Promise((resolve, reject) => {
+      fetchMore({
+        hasNextPage,
         endCursor,
         userId,
       });
-      timeLineList = timeLineList.concat(data?.list);
-      setTimeout(() => {
-        fetchMore({
-          hasNextPage: data?.hasNextPage,
-          endCursor: data?.endCursor,
+
+      //开始请求分页接口
+      async function fetchPage({ endCursor, userId, pageSize = 12 }) {
+        const BASE_URL = 'https://www.instagram.com/graphql/query/?';
+        const options = {
+          resolveWithFullResponse: false,
+          proxy: 'http://localhost:1235',
+          headers: {
+            'x-requested-with': 'XMLHttpRequest',
+            'user-agent': userAgent,
+            Cookie: `sessionid=${sessionid};ig_lang=en;`,
+          },
+          json: true,
+        };
+        const variables = {
+          id: userId,
+          first: pageSize,
+          after: endCursor,
+        };
+        const str = escape(JSON.stringify(variables));
+        const url = `${BASE_URL}query_hash=${queryHash}&variables=${str}`;
+        const res = await rp.get(url, options);
+        const data =
+          res?.data?.user?.edge_owner_to_timeline_media || {};
+        return {
+          hasNextPage: data?.page_info?.has_next_page,
+          endCursor: data?.page_info?.end_cursor,
+          list: data?.edges,
+        };
+      }
+
+      // xxx
+      async function fetchMore({ hasNextPage, endCursor, userId }) {
+        const len = timeLineList.length;
+        if (len >= MAX || !hasNextPage) return resolve();
+        const data = await fetchPage({
+          endCursor,
           userId,
         });
-      }, 300);
-    }
+        timeLineList = timeLineList.concat(data?.list);
+        setTimeout(() => {
+          fetchMore({
+            hasNextPage: data?.hasNextPage,
+            endCursor: data?.endCursor,
+            userId,
+          });
+        }, 300);
+      }
+    });
   }
+
+  // 异步循环改为递归
+  // function downloadOneAllAsync(posts, onsuccess, onfailure) {
+  //   var n = posts.length;
+  //   function tryNextUrl(i) {
+  //     if (i >= n) {
+  //       onfailure('all failed');
+  //       return;
+  //     }
+  //     function downloadAsync(post) {
+
+  //     }
+  //     downloadAsync(posts[i], onsuccess, function () {
+  //       tryNextUrl(i + 1);
+  //     });
+  //   }
+  //   tryNextUrl[0];
+  // }
+
+  // 处理所有post
+  // function getCalculatedPostsParallel(posts = []) {
+  //   const files = posts.map(async (post) => {
+  //     let {
+  //       __typename,
+  //       is_video,
+  //       shortcode,
+  //       location,
+  //       id,
+  //       edge_liked_by, // 点赞数
+  //       edge_media_to_caption,
+  //       edge_media_to_comment,
+  //       display_url,
+  //       video_url,
+  //       video_view_count,
+  //       taken_at_timestamp,
+  //       edge_sidecar_to_children,
+  //     } = post?.node || {};
+
+  //     // 处理轮播类型
+  //     let slider = [];
+  //     if (__typename === 'GraphSidecar') {
+  //       slider = edge_sidecar_to_children.edges.map(async (item) => {
+  //         var { is_video, video_url, display_url, id } = item.node;
+  //         if (is_video) {
+  //           video_url = await upload(video_url);
+  //         } else {
+  //           display_url = await upload(display_url);
+  //         }
+  //         return {
+  //           display_url,
+  //           video_url,
+  //           id,
+  //           is_video,
+  //         };
+  //       });
+  //     } else if (__typename === 'GraphImage') {
+  //       display_url = await upload(display_url);
+  //     } else if (__typename === 'GraphVideo') {
+  //       video_url = await upload(video_url);
+  //     }
+
+  //     return {
+  //       liked_count: edge_liked_by?.count, // 点赞
+  //       comment_count: edge_media_to_comment?.count,
+  //       description: edge_media_to_caption?.edges?.[0]?.node?.text, // 描述信息
+  //       id,
+  //       location,
+  //       shortcode,
+  //       display_url,
+  //       is_video,
+  //       type: __typename,
+  //       video_url,
+  //       video_view_count,
+  //       taken_at_timestamp, // 时间戳
+  //       slider, // 轮播图
+  //     };
+  //   });
+  //   return Promise.all(files);
+  // }
 }
 
-main('theraloss');
+main('phonehubb').catch((err) => {
+  console.log(err);
+});
