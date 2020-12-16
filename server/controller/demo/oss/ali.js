@@ -1,7 +1,7 @@
 require('dotenv').config();
 var OSS = require('ali-oss');
 var request = require('request');
-const config = require('../../config');
+const config = require('../../../config');
 
 var { ali_bucket, ali_region } = config;
 var { AliAccessKeyId, AliAccessKeySecret } = process.env;

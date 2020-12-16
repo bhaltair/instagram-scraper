@@ -4,8 +4,8 @@ const fs = require('fs');
 const path = require('path');
 // const devices = require('puppeteer/DeviceDescriptors');
 
-const { addCookies } = require('../libs/index');
-const jsonData = require('../../config/id.js');
+const { addCookies } = require('../../libs/index');
+const jsonData = require('../../../config/id.js');
 
 const fsPromises = fs.promises;
 // const iPhone = devices['iPhone 6'];

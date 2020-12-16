@@ -1,6 +1,6 @@
-const Axios = require('axios');
-const cheerio = require('cheerio');
 require('dotenv').config();
+const Axios = require('axios');
+// const cheerio = require('cheerio');
 
 const sessionid = process.env.SESSION_ID;
 
