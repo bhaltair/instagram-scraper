@@ -1,8 +1,7 @@
 const mongoose = require('mongoose');
-
 mongoose.connect('mongodb://localhost/my_database', {
   useNewUrlParser: true,
-  // useUnifiedTopology: true,
+  useUnifiedTopology: true,
   // useFindAndModify: false,
   // useCreateIndex: true,
 });
@@ -24,12 +23,12 @@ db.once('open', function () {
   console.log(silence.name); // 'Silence'
 
   // silence
-  silence.save(function (err, fluffy) {
+  silence.save(function (err) {
     if (err) return console.error(err);
   });
 
   // fluffy
-  fluffy.save(function (err, fluffy) {
+  fluffy.save(function (err) {
     if (err) return console.error(err);
   });
 
@@ -38,7 +37,7 @@ db.once('open', function () {
     console.log(kittens);
   });
 
-  Kitten.find({ name: /^fluff/ }, callback);
+  Kitten.find({ name: /^fluff/ });
 });
 
 // const Schema = mongoose.Schema;
@@ -56,7 +55,6 @@ db.once('open', function () {
 // const instance = new BlogPostModel();
 // instance.my.key = 'hello';
 // instance.save(function (err) {
-//   //
 // });
 
 // BlogPostModel.find({}, function (err, docs) {
@@ -64,6 +62,5 @@ db.once('open', function () {
 // });
 
 // You can also findOne, findById, update, etc.
-
 // const instance = await MyModel.findOne({ ... });
 // console.log(instance.my.key);  // 'hello'

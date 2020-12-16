@@ -1,10 +1,10 @@
 require('dotenv').config();
 const cheerio = require('cheerio');
 const rp = require('request-promise');
-const config = require('../config');
-const { upload } = require('../utils/alioss');
-const { writeFile } = require('../utils/fs');
-
+const config = require('../../config');
+const { upload } = require('../libs/alioss');
+const { writeFile } = require('../libs/fs');
+const User = require('../libs/mongo/user');
 const userAgent =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36 Edg/87.0.664.57';
 
@@ -131,10 +131,14 @@ async function main(username) {
     timeLineList,
   );
 
-  await writeFile(user_name, {
+  const json = {
     ...user,
     posts: calculatedPosts,
-  });
+  };
+  await writeFile(user_name, json);
+
+  await User.findByIdAndUpdatePromise(json);
+  console.log('write mongo success');
 
   // 处理图片转存
   async function getCalculatedPostsSerial(posts = []) {
@@ -271,7 +275,7 @@ async function main(username) {
   }
 }
 
-main('phonehubb')
+main('straightlynegadgets')
   .then(() => {
     console.log('success');
   })

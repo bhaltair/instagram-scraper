@@ -3,7 +3,7 @@ require('dotenv').config();
 // const path = require('path');
 const COS = require('cos-nodejs-sdk-v5');
 const request = require('request');
-const config = require('../config');
+const config = require('../../config');
 
 const SecretId = process.env.SecretId;
 const SecretKey = process.env.SecretKey;
@@ -13,7 +13,7 @@ const cos = new COS({
   SecretKey,
   Timeout: 10000,
   FileParallelLimit: 3,
-  Proxy: 'http://127.0.0.1:1235',
+  // Proxy: 'http://127.0.0.1:1235',
 });
 
 // 上传对象
@@ -25,7 +25,7 @@ function upload(url) {
     if (!url) reject(new Error('no url'));
 
     const readableStream = request(url, {
-      proxy: 'http://localhost:1235',
+      // proxy: 'http://localhost:1235',
     });
 
     // const regexp = /\.mp4|jpg/;
