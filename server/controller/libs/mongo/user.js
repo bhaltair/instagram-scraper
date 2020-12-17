@@ -69,10 +69,8 @@ User.prototype.findByIdAndUpdatePromise = async function (obj) {
   // await mongoose.disconnect();
 };
 
-User.prototype.findByName = function (user_name, callback) {
-  UserModel.findOne({ user_name }, function (err, obj) {
-    callback(err, obj);
-  });
+User.prototype.findByName = async function (query) {
+  return await UserModel.findOne(query);
 };
 
 User.prototype.findList = async function (query = {}) {
@@ -91,16 +89,6 @@ User.prototype.findList = async function (query = {}) {
       }
     : null;
   return await UserModel.paginate(query, options);
-  // return new Promise((resolve, reject) => {
-  //   UserModel.find(query, function (err, obj) {
-  //     if (err) {
-  //       reject(err);
-  //     } else {
-  //       // mongoose.disconnect();
-  //       resolve(obj);
-  //     }
-  //   });
-  // });
 };
 
 module.exports = new User();

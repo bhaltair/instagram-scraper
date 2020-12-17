@@ -70,6 +70,22 @@ app.get('/api/user/list', async (req, res) => {
   }
 });
 
+app.get('/api/user', async (req, res) => {
+  const query = req.query;
+  try {
+    const data = await userController.getDetail(query);
+    res.json({
+      data,
+      success: true,
+    });
+  } catch (error) {
+    res.json({
+      data: null,
+      success: true,
+    });
+  }
+});
+
 app.get('/', (req, res) => {
   res.send('hello');
 });
