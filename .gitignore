@@ -5,3 +5,4 @@
 commit.log
 .env
 /data
+access.log

@@ -56,10 +56,11 @@ app.post('/api/user/sync', async (req, res) => {
 app.get('/api/user/list', async (req, res) => {
   const query = req.query;
   try {
-    const list = await userController.getList(query);
+    const data = await userController.getList(query);
     res.json({
-      data: list,
+      data: data?.docs,
       success: true,
+      total: data?.total,
     });
   } catch (error) {
     res.json({

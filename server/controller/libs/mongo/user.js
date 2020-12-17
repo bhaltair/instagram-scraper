@@ -1,4 +1,5 @@
 var mongoose = require('mongoose');
+const mongoosePaginate = require('mongoose-paginate-v2');
 var _ = require('lodash');
 var userSchema = require('./userSchema');
 
@@ -10,10 +11,11 @@ mongoose.connect('mongodb://localhost:27017/nodejs', {
 
 mongoose.set('debug', false);
 
-var UserModel = mongoose.model(
-  'User',
-  new mongoose.Schema(userSchema),
-);
+var UserSchema = new mongoose.Schema(userSchema);
+
+UserSchema.plugin(mongoosePaginate);
+
+var UserModel = mongoose.model('User', UserSchema);
 
 var User = function () {};
 
@@ -73,17 +75,32 @@ User.prototype.findByName = function (user_name, callback) {
   });
 };
 
-User.prototype.findList = function (query = {}) {
-  return new Promise((resolve, reject) => {
-    UserModel.find(query, function (err, obj) {
-      if (err) {
-        reject(err);
-      } else {
-        // mongoose.disconnect();
-        resolve(obj);
+User.prototype.findList = async function (query = {}) {
+  const options = {
+    page: query?.current,
+    limit: query?.pageSize,
+    sort: { user_name: 1 },
+    customLabels: {
+      totalDocs: 'total',
+      docs: 'docs',
+    },
+  };
+  query = query.user_name
+    ? {
+        user_name: query.user_name,
       }
-    });
-  });
+    : null;
+  return await UserModel.paginate(query, options);
+  // return new Promise((resolve, reject) => {
+  //   UserModel.find(query, function (err, obj) {
+  //     if (err) {
+  //       reject(err);
+  //     } else {
+  //       // mongoose.disconnect();
+  //       resolve(obj);
+  //     }
+  //   });
+  // });
 };
 
 module.exports = new User();
