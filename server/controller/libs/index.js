@@ -1,21 +1,22 @@
 async function addCookies(cookies_str, page, domain) {
-  let cookies = cookies_str.split(";").map((pair) => {
-    let name = pair.trim().slice(0, pair.trim().indexOf("="));
-    let value = pair.trim().slice(pair.trim().indexOf("=") + 1);
+  let cookies = cookies_str.split(';').map((pair) => {
+    let name = pair.trim().slice(0, pair.trim().indexOf('='));
+    let value = pair.trim().slice(pair.trim().indexOf('=') + 1);
     return { name, value, domain };
   });
   await Promise.all(
     cookies.map((pair) => {
       return page.setCookie(pair);
-    })
+    }),
   );
 }
 
 // 局部滚动
 async function scrollDown(selector, page) {
   await page.evaluate(async (selector) => {
+    // eslint-disable-next-line no-undef
     const section = document.querySelector(selector);
-    await new Promise((resolve, reject) => {
+    await new Promise((resolve) => {
       let totalHeight = 0;
       let distance = 100;
       const timer = setInterval(() => {
@@ -40,7 +41,9 @@ function autoScroll(page) {
       var distance = 100;
       // 每200毫秒让页面下滑100像素的距离
       var timer = setInterval(() => {
+        // eslint-disable-next-line no-undef
         var scrollHeight = document.body.scrollHeight;
+        // eslint-disable-next-line no-undef
         window.scrollBy(0, distance);
         totalHeight += distance;
         if (totalHeight >= scrollHeight) {

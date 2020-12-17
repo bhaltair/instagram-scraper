@@ -1,6 +1,6 @@
-require('../../connect');
+require('../connect');
 var mongoose = require('mongoose');
-var userSchema = require('../../schema/user');
+var userSchema = require('../schema/user');
 var UserSchema = new mongoose.Schema(userSchema);
 
 var UserModel = mongoose.model('User', UserSchema);

@@ -5,17 +5,9 @@ const cors = require('cors');
 const morgan = require('morgan');
 const fs = require('fs');
 const EventEmitter = require('events');
-const userController = require('./controller/user/get');
-const scraperContoller = require('./controller/scraper/script');
+const userController = require('./controller/user');
 
 const emitter = new EventEmitter();
-
-// webpack 相关
-// const webpack = require('webpack');
-// const webpackDevMiddleware = require('webpack-dev-middleware');
-// const webpackHotMiddleware = require('webpack-hot-middleware');
-// const config = require(path.join(__dirname, '../webpack.config.js'));
-// const compiler = webpack(config);
 
 const app = express();
 var accessLogStream = fs.createWriteStream(
@@ -31,10 +23,6 @@ app.use(
   }),
 );
 app.options('*', cors());
-// const { script } = require('./script');
-
-// app.use(webpackDevMiddleware(compiler, config.devServer));
-// app.use(webpackHotMiddleware(compiler));
 
 // 静态文件
 // app.use(express.static(path.join(__dirname, '../build')));
@@ -52,7 +40,7 @@ app.post('/api/user/sync', async (req, res) => {
   //   异步
   try {
     const total = !!req.body.total;
-    await scraperContoller.scraperUser(userName, {
+    await userController.sync(userName, {
       total,
     });
     emitter.emit('push', 'sync', {

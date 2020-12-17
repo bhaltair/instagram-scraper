@@ -1,5 +1,5 @@
 //str是请求首页时返回的html字符串
-export function getProfilePageContainerURL(str, type = 'profile') {
+function getProfilePageContainerURL(str, type = 'profile') {
   let reg = '';
   if (type === 'profile') {
     reg = /<script.*src="(.*ProfilePageContainer.*)".*<\/script>/;
@@ -13,11 +13,7 @@ export function getProfilePageContainerURL(str, type = 'profile') {
 
 //调用方法：getQueryHashByScript(res,'queryId')
 //res是get那个script返回的内容
-export function getQueryHashByScript(
-  str,
-  word = 'queryId',
-  arr = [],
-) {
+function getQueryHashByScript(str, word = 'queryId', arr = []) {
   let i = 0,
     str2 = '',
     key = '';
@@ -31,3 +27,8 @@ export function getQueryHashByScript(
     return arr;
   }
 }
+
+module.exports = {
+  getProfilePageContainerURL,
+  getQueryHashByScript,
+};

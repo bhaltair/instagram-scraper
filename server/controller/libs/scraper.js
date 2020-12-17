@@ -2,9 +2,9 @@ require('dotenv').config();
 const cheerio = require('cheerio');
 const rp = require('request-promise');
 const config = require('../../config');
-const { upload } = require('../libs/alioss');
+const { upload } = require('./alioss');
 // const { writeFile } = require('../libs/fs');
-const User = require('../libs/mongo/user');
+const User = require('./mongo/user');
 const userAgent =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36 Edg/87.0.664.57';
 
