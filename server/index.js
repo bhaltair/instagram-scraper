@@ -5,7 +5,10 @@ const cors = require('cors');
 const morgan = require('morgan');
 const fs = require('fs');
 const EventEmitter = require('events');
+
+require('./controller/libs/mongo/connect');
 const userController = require('./controller/user');
+const exploreController = require('./controller/explore');
 
 const emitter = new EventEmitter();
 
@@ -74,6 +77,22 @@ app.get('/api/user', async (req, res) => {
   const query = req.query;
   try {
     const data = await userController.getDetail(query);
+    res.json({
+      data,
+      success: true,
+    });
+  } catch (error) {
+    res.json({
+      data: null,
+      success: true,
+    });
+  }
+});
+
+app.get('/explore', async (req, res) => {
+  const query = req.query;
+  try {
+    const data = await exploreController.getTimeLine(query);
     res.json({
       data,
       success: true,

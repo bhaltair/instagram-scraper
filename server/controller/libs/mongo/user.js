@@ -3,16 +3,7 @@ const mongoosePaginate = require('mongoose-paginate-v2');
 var _ = require('lodash');
 var userSchema = require('./userSchema');
 
-mongoose.connect('mongodb://localhost:27017/nodejs', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  useFindAndModify: false,
-});
-
-mongoose.set('debug', false);
-
 var UserSchema = new mongoose.Schema(userSchema);
-
 UserSchema.plugin(mongoosePaginate);
 
 var UserModel = mongoose.model('User', UserSchema);
@@ -43,11 +34,7 @@ User.prototype.findByIdAndUpdate = function (obj, callback) {
 
 User.prototype.findByIdAndUpdatePromise = async function (obj) {
   const query = { user_id: obj?.user_id };
-  // return await UserModel.findOneAndUpdate(query, obj, {
-  //   upsert: true, //  creates the object if it doesn't exist. defaults to false
-  //   new: true, // 返回修改后的数据
-  //   overwrite: false,
-  // });
+
   const doc = await UserModel.findOne(query);
   if (doc) {
     const list = doc?.posts?.concat(obj?.posts);
@@ -66,7 +53,6 @@ User.prototype.findByIdAndUpdatePromise = async function (obj) {
     var instance = new UserModel(obj);
     await instance.save();
   }
-  // await mongoose.disconnect();
 };
 
 User.prototype.findByName = async function (query) {

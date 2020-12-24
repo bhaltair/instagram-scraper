@@ -5,6 +5,7 @@ const config = require('../../config');
 const { upload } = require('./alioss');
 // const { writeFile } = require('../libs/fs');
 const User = require('./mongo/user');
+const Post = require('./mongo/post');
 const userAgent =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36 Edg/87.0.664.57';
 
@@ -142,13 +143,15 @@ async function scraperUser(
 
   const json = {
     ...user,
-    posts: calculatedPosts,
   };
 
   // 不写文件了
   // await writeFile(user_name, json);
 
   await User.findByIdAndUpdatePromise(json);
+  await Post.saveMany(calculatedPosts);
+
+  // 写posts
   console.log('write mongo success');
 
   // 处理图片转存
@@ -169,6 +172,7 @@ async function scraperUser(
         video_view_count,
         edge_sidecar_to_children,
         taken_at_timestamp,
+        owner,
       } = post?.node || {};
 
       const slider = [];
@@ -214,6 +218,7 @@ async function scraperUser(
         __typename,
         video_url,
         video_view_count,
+        owner,
         taken_at_timestamp, // 时间戳
         slider, // 轮播图
       };

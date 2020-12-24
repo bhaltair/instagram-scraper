@@ -1,6 +1,3 @@
-var mongoose = require('mongoose');
-var Schema = mongoose.Schema;
-
 var userSchema = {
   biography: {
     type: String,
@@ -47,9 +44,9 @@ var userSchema = {
   user_name: {
     type: String,
   },
-  posts: {
-    type: [Schema.Types.Mixed],
-  },
+  // posts: {
+  //   type: [Schema.Types.Mixed],
+  // },
 };
 
 module.exports = userSchema;
