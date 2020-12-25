@@ -25,9 +25,7 @@ const postSchema = {
   shortcode: {
     type: 'String',
   },
-  slider: {
-    type: 'Array',
-  },
+  slider: Array,
   taken_at_timestamp: {
     type: 'Number',
   },

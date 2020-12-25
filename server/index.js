@@ -89,7 +89,7 @@ app.get('/api/user', async (req, res) => {
   }
 });
 
-app.get('/explore', async (req, res) => {
+app.get('/api/explore', async (req, res) => {
   const query = req.query;
   try {
     const data = await exploreController.getTimeLine(query);
@@ -99,7 +99,9 @@ app.get('/explore', async (req, res) => {
     });
   } catch (error) {
     res.json({
-      data: null,
+      data: {
+        error,
+      },
       success: true,
     });
   }
