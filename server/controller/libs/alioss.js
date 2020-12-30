@@ -11,37 +11,8 @@ let client = new OSS({
   accessKeySecret: AliAccessKeySecret,
   bucket: ali_bucket,
   region: ali_region,
+  secure: true,
 });
-
-// 同步上传
-// async function put () {
-//   try {
-//     // 'object'表示上传到OSS的object名称，'localfile'表示本地文件或者文件路径。
-//     let r1 = await client.put('object','localfile');
-//     console.log('put success: %j', r1);
-//     let r2 = await client.get('object');
-//     console.log('get success: %j', r2);
-//   } catch(e) {
-//     console.error('error: %j', err);
-//   }
-// }
-
-// put();
-
-// 异步上传
-// 'object'表示从OSS下载的object名称，'localfile'表示本地文件或者文件路径。
-// client
-//   .put('object', 'localfile')
-//   .then(function (r1) {
-//     console.log('put success: %j', r1);
-//     return client.get('object');
-//   })
-//   .then(function (r2) {
-//     console.log('get success: %j', r2);
-//   })
-//   .catch(function (err) {
-//     console.error('error: %j', err);
-//   });
 
 async function put(key, stream) {
   console.log(`uploading ${key}`);
@@ -61,10 +32,3 @@ async function upload(url) {
 module.exports = {
   upload,
 };
-
-// const url =
-//   'https://instagram.fkix2-1.fna.fbcdn.net/v/t51.2885-19/s150x150/83259765_625411508275319_7943554645450817536_n.jpg?_nc_ht=instagram.fkix2-1.fna.fbcdn.net&_nc_ohc=QS8nYwr_BEwAX8P_alz&tp=1&oh=92b821c097ed8db9088fa1f1f63a82b8&oe=5FFC01BD';
-
-// upload(url).then((res) => {
-//   console.log(res);
-// });

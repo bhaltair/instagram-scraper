@@ -43,7 +43,7 @@ function upload(url) {
         Key /* 必须 */,
         StorageClass: 'STANDARD',
         Body: readableStream, // 上传文件对象
-        onProgress: function (progressData) {
+        onProgress: function () {
           // console.log(progressData)
         },
       },

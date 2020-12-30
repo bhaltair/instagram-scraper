@@ -1,3 +1,6 @@
+const mongoose = require('mongoose');
+var Schema = mongoose.Schema;
+
 const postSchema = {
   comment_count: {
     type: 'Number',
@@ -28,6 +31,11 @@ const postSchema = {
   slider: Array,
   taken_at_timestamp: {
     type: 'Number',
+  },
+  user: {
+    type: Schema.Types.ObjectId,
+    // 引用 user 的模型
+    ref: 'User',
   },
   owner: {
     id: {

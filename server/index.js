@@ -8,7 +8,7 @@ const EventEmitter = require('events');
 
 require('./controller/libs/mongo/connect');
 const userController = require('./controller/user');
-const exploreController = require('./controller/explore');
+const PostController = require('./controller/post');
 
 const emitter = new EventEmitter();
 
@@ -19,12 +19,12 @@ var accessLogStream = fs.createWriteStream(
 );
 app.use(morgan('combined', { stream: accessLogStream }));
 
-// app.use(cors());
-app.use(
-  cors({
-    origin: 'http://localhost:8000',
-  }),
-);
+app.use(cors());
+// app.use(
+//   cors({
+//     origin: 'http://localhost:8000',
+//   }),
+// );
 app.options('*', cors());
 
 // 静态文件
@@ -33,7 +33,8 @@ app.options('*', cors());
 app.use(express.json()); // for parsing application/json
 app.use(express.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
 
-app.post('/api/user/sync', async (req, res) => {
+// 同步用户
+app.post('/api/user', async (req, res) => {
   const userName = req.body.user_name;
   res.json({
     data: null,
@@ -56,7 +57,10 @@ app.post('/api/user/sync', async (req, res) => {
   }
 });
 
-app.get('/api/user/list', async (req, res) => {
+/**
+ * 用户列表
+ */
+app.get('/api/users', async (req, res) => {
   const query = req.query;
   try {
     const data = await userController.getList(query);
@@ -73,6 +77,7 @@ app.get('/api/user/list', async (req, res) => {
   }
 });
 
+// 用户详情
 app.get('/api/user', async (req, res) => {
   const query = req.query;
   try {
@@ -89,20 +94,18 @@ app.get('/api/user', async (req, res) => {
   }
 });
 
-app.get('/api/explore', async (req, res) => {
+// 用户post列表
+app.get('/api/posts', async (req, res) => {
   const query = req.query;
   try {
-    const data = await exploreController.getTimeLine(query);
+    const data = await PostController.getPosts(query);
     res.json({
       data,
       success: true,
     });
   } catch (error) {
-    res.json({
-      data: {
-        error,
-      },
-      success: true,
+    res.status(500).json({
+      error: error.toString(),
     });
   }
 });

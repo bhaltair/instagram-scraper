@@ -148,8 +148,8 @@ async function scraperUser(
   // 不写文件了
   // await writeFile(user_name, json);
 
-  await User.findByIdAndUpdatePromise(json);
-  await Post.saveMany(calculatedPosts);
+  const userDoc = await User.findByIdAndUpdatePromise(json);
+  await Post.saveMany(calculatedPosts, userDoc._id);
 
   // 写posts
   console.log('write mongo success');

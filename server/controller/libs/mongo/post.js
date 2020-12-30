@@ -10,20 +10,38 @@ class Post {
   async save(obj) {
     await PostModel.create(obj);
   }
-  async saveMany(arr) {
+  async saveMany(arr, user) {
+    arr = arr.map((item) => {
+      return {
+        ...item,
+        user,
+      };
+    });
     await PostModel.insertMany(arr);
   }
 
-  async getTimeLine(query = {}) {
+  async getPosts(query = {}) {
     const options = {
       page: query?.current,
       limit: query?.pageSize,
+      offset: query?.offset || 0,
+      lean: true,
+      populate: {
+        path: 'user',
+        select: 'user_name profile_pic_url user_id',
+      },
       customLabels: {
         totalDocs: 'total',
         docs: 'docs',
       },
     };
-    return await PostModel.paginate(null, options);
+
+    query = query.user_name
+      ? {
+          'owner.username': query.user_name,
+        }
+      : null;
+    return await PostModel.paginate(query, options);
   }
 }
 
